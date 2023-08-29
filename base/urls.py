@@ -6,6 +6,9 @@ from . import views
 urlpatterns = [
     path('login/', TokenObtainPairView.as_view()),
     path('register/', views.register),
-    path('problem/<str:problem_name>/', views.problem_solver),   
+    path('problem/<str:problem_name>/', views.problem_solver), 
+    path('retrieve-exercises/', views.RetrieveSolvedExercisesView.as_view(), name='retrieve-exercises'),
+
+
 ]
 

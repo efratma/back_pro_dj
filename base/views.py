@@ -1,19 +1,27 @@
 import random
 from django.http import HttpResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from sympy import expand, symbols,Eq, linsolve
-from .Serializer import Distributive_property_Serializer, Equation_System_e_Serializer, Equation_System_h_Serializer, Equation_System_m_Serializer, Equation_e_Serializer, Equation_h_Serializer, Equation_m_Serializer, Pythagoras_eh_Serializer, Triangle_hm_Serializer, line_equation_Serializer,Meeting_Point_2_functions_Serializer,Cutting_points_with_hinges_Serializer,Triangle_e_Serializer
-from .models import problems
+from .Serializer import Distributive_property_Serializer, Equation_System_e_Serializer, Equation_System_h_Serializer, Equation_System_m_Serializer, Equation_e_Serializer, Equation_h_Serializer, Equation_m_Serializer, Pythagoras_h_Serializer, SolvedExerciseSerializer, Triangle_hm_Serializer, line_equation_Serializer,Meeting_Point_2_functions_Serializer,Cutting_points_with_hinges_Serializer,Triangle_e_Serializer,Pythagoras_e_Serializer,ProblemsSerializer
+from .models import SolvedExercise, problems
 from rest_framework.views import APIView
 import math
 import sympy as sp
 from random import randint
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics
+
+
+
+
 
 # register
+
+
 @api_view(['POST'])
 def register(request):
     user = User.objects.create_user(
@@ -38,19 +46,19 @@ def generate_problem():
     problem_type = random.randint(1, 5)
 
     if problem_type == 1:
-        problem_str = f"{a}({b}*{x}+{c})({x}+{d})"
+        problem_str = f"{a}({b}{x}+{c})({x}+{d})"
         solution = expand(a*(b*x+c)*(x+d))
     elif problem_type == 2:
         problem_str = f"{a}({x}+{c})({x}+{d})"
         solution = expand(a*(x+c)*(x+d))
     elif problem_type == 3:
-        problem_str = f"{a}({b}*{x}+{c})({y}+{d})"
+        problem_str = f"{a}({b}{x}+{c})({y}+{d})"
         solution = expand(a*(b*x+c)*(y+d))
     elif problem_type == 4:
-        problem_str = f"{a}({b}*{y}+{c})({y}+{d})"
+        problem_str = f"{a}({b}{y}+{c})({y}+{d})"
         solution = expand(a*(b*y+c)*(y+d))
     else:
-        problem_str = f"{a}({b}*{x}+{c})({e}*{y}+{d})"
+        problem_str = f"{a}({b}{x}+{c})({e}{y}+{d})"
         solution = expand(a*(b*x+c)*(e*y+d))
     
     return problem_str, solution
@@ -82,10 +90,10 @@ def generate_problem_1():
         problem_str = f"({x}+{a})({a}+{b})"
         solution = expand((x+a)*(a+b))
     elif problem_type == 2:
-        problem_str = f"({a*x}+{b})({x}+{c})"
+        problem_str = f"({a}{x}+{b})({x}+{c})"
         solution = expand((a*x+b)*(x+c))
     else:
-        problem_str = f"({a*x}+{b})({c*y}+{d})"
+        problem_str = f"({a}{x}+{b})({c}{y}+{d})"
         solution = expand((a*x+b)*(c*y+d))
     
     return problem_str, solution
@@ -105,21 +113,21 @@ class Law_of_Extended_Division_e(APIView):
 class Equation_System_h(APIView):
     def get(self, request, *args, **kwargs):
         # Define variables
-        x, y = sp.symbols('x y')
+        x, y = symbols('x y')
 
         # Generate coefficients for three types of equations
         a, b, d, e, f, h, i, k, l = [random.randint(-5, 5) for _ in range(9)]
-        c, g, j = [random.randint(-5, 5) or 1 for _ in range(3)] # If 0 is generated, use 1 instead
+        c, g, j = [random.randint(1, 5) for _ in range(3)] # Ensure non-zero for divisors
 
-        # Generate three equations in string format to keep brackets
-        eq1_str = f"({a}*x{'+' if b >= 0 else ''}{b})/{c}{'+' if d >= 0 else '-' }{abs(d)} = ({e}*y{'+' if f >= 0 else ''}{f})/{g}"
-        eq2_str = f"({a}*x{'+' if b >= 0 else ''}{b})/{c} = ({e}*y{'+' if f >= 0 else ''}{f})/{g}"
-        eq3_str = f"({h}*x{'+' if i >= 0 else ''}{i})/{j}{'+' if k >= 0 else '-' }{abs(k)}*y{'+' if l >= 0 else ''}{l}/{g} = {d}"
+        # Define equations as strings
+        eq1_str = f"({a}x{'+' if b >= 0 else ''}{b})/{c}{'+' if d >= 0 else '-'}{abs(d)} = ({e}y{'+' if f >= 0 else ''}{f})/{g}"
+        eq2_str = f"({a}x{'+' if b >= 0 else ''}{b})/{c} = ({e}y{'+' if f >= 0 else ''}{f})/{g}"
+        eq3_str = f"({h}x{'+' if i >= 0 else ''}{i})/{j}{'+' if k >= 0 else '-'}{abs(k)}y{'+' if l >= 0 else ''}{l}/{g} = {d}"
 
-        # Convert string equations to sympy equations
-        eq1 = sp.parse_expr(eq1_str.replace("=", "-(") + ")")
-        eq2 = sp.parse_expr(eq2_str.replace("=", "-(") + ")")
-        eq3 = sp.parse_expr(eq3_str.replace("=", "-(") + ")")
+        # Convert to sympy expressions
+        eq1 = Eq((a * x + b) / c + d, (e * y + f) / g)
+        eq2 = Eq((a * x + b) / c, (e * y + f) / g)
+        eq3 = Eq((h * x + i) / j + k * y + l / g, d)
 
         # Randomly select two equations from the list
         eqs_str = [eq1_str, eq2_str, eq3_str]
@@ -127,8 +135,8 @@ class Equation_System_h(APIView):
         selected_indices = random.sample(range(3), 2)
 
         # Solve the system of equations
-        solution = sp.linsolve([eqs[i] for i in selected_indices], (x, y))
-        solution_list = list(solution)
+        solution = linsolve([eqs[i] for i in selected_indices], (x, y))
+
 
         # Check for no solution or infinite solutions
         if len(solution) == 0:
@@ -166,8 +174,8 @@ class Equation_System_m(APIView):
         equation2 = Eq(f * (g * x + h) + i * (y + a), b)
         solution = linsolve((equation1, equation2), (x, y))
 
-        equation1_str = f"{a}*(x{'+' if b >= 0 else ''}{b}) + {c}*(y{'+' if d >= 0 else ''}{d}) = {e}"
-        equation2_str = f"{f}*({g}*x{'+' if h >= 0 else ''}{h}) + {i}*(y{'+' if a >= 0 else ''}{a}) = {b}"
+        equation1_str = f"{a}(x{'+' if b >= 0 else ''}{b}) + {c}(y{'+' if d >= 0 else ''}{d}) = {e}"
+        equation2_str = f"{f}({g}x{'+' if h >= 0 else ''}{h}) + {i}(y{'+' if a >= 0 else ''}{a}) = {b}"
 
         if len(solution) == 0:
             return Response({"error": "The system of equations has no solution."})
@@ -193,22 +201,47 @@ def Equation_System_e(request):
     x, y = sp.symbols('x y')
     a, b, e = [random.randint(1, 10)-5 for _ in range(3)]
     c, d, f = [random.randint(1, 10)-5 for _ in range(3)]
+    
     eq1 = sp.Eq(a*x + b*y, e)
     eq2 = sp.Eq(c*x + d*y, f)
-    solution = sp.linsolve((eq1,eq2), (x, y))
-    equation1_str = f"{a}*x + {b}*y = {e}" # Equation string
-    equation2_str = f"{c}*x + {d}*y = {f}" # Equation string
+    
+    solution = sp.linsolve((eq1, eq2), (x, y))
+    
+    # Extract the solution
+    x_sol, y_sol = list(solution)[0]
+
+    # Check if they are numbers and convert, else store as string
+    if x_sol.is_number:
+        solution_x = float(x_sol)
+    else:
+        solution_x = str(x_sol)
+
+    if y_sol.is_number:
+        solution_y = float(y_sol)
+    else:
+        solution_y = str(y_sol)
+
+    equation1_str = f"{a}x + {b}y = {e}"  # Equation string
+    equation2_str = f"{c}x + {d}y = {f}"  # Equation string
 
     equation_instance = problems(
-        ###############a=a, b=b, c=c, d=d, e=e, f=f,############
-        solution_x=float(list(solution)[0][0]),
-        solution_y=float(list(solution)[0][1]),
-        equation1=equation1_str, # Store in database
-        equation2=equation2_str  # Store in database
+        # Assuming you might have parameters a to f for the problems model. If not, comment/remove this line.
+        # a=a, b=b, c=c, d=d, e=e, f=f,
+        solution_x=solution_x,
+        solution_y=solution_y,
+        equation1=equation1_str,  # Store in database
+        equation2=equation2_str   # Store in database
     )
+    
     equation_instance.save()
     serializer = Equation_System_e_Serializer(equation_instance)
     return Response(serializer.data)
+
+
+
+
+
+
 ####################משוואה ז רמה קשה
 def generate_equation():
     a = random.randint(1,10)
@@ -217,14 +250,19 @@ def generate_equation():
     d = random.randint(1,10)
     e = random.randint(1,10)
     f = random.randint(1,10)
-    
-    x = round(random.uniform(-10, 10), 2)
-    g = a*x + b*(x+c) - d*(e*x + f)
-    
-    while not g.is_integer():
-        x = round(random.uniform(-10, 10), 2)
-        g = a*x + b*(x+c) - d*(e*x + f)
 
+    g = random.randint(-10, 10)
+
+    # Solving for x in the equation: a*x + b*(x+c) - d*(e*x + f) - g = 0
+    coefficient_x = a + b - d * e
+    constant_term = b * c - d * f - g
+
+    # Making sure the coefficient for x is not zero
+    while coefficient_x == 0:
+        a = random.randint(1,10)
+        coefficient_x = a + b - d * e
+
+    x = round(-constant_term / coefficient_x, 2)
     equation_text = f"{a}x + {b}(x + {c}) = {d}({e}x + {f}) + {g}"
     return equation_text, x
 
@@ -293,12 +331,25 @@ def generate_question():
 def Pythagoras_eh(request):
     a, b, c, option = generate_question()
     question = problems.objects.create(a_fl=a, b_fl=b, c_fl=c, option=option)
-    serializer = Pythagoras_eh_Serializer(question)
+    serializer = Pythagoras_h_Serializer(question)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+######## פיתגורס קל
+def generate_question1():
+    a = random.randint(1, 20)
+    b = random.randint(1, 20)
+    c = round((a**2 + b**2)**0.5, 2)
+    return a, b, c
+
+class Pythagoras_e(APIView):
+    def get(self, request):
+        a, b, c = generate_question1()
+        question = problems.objects.create(a=a, b=b, c_fl=c)  # Store c in the database
+        serializer = Pythagoras_e_Serializer(question)
+        return Response(serializer.data)
+
+
 ################### מציאת קו ישר כל הרמות
-
-
 class line_equation(APIView):
     def get(self, request):
         x1 = random.randint(-10, 10)
@@ -309,9 +360,15 @@ class line_equation(APIView):
         if x2 != x1:
             slope = (y2 - y1) // (x2 - x1)
             y_intercept = y1 - slope * x1
-            equation = f"y={slope}x+{y_intercept}"
+
+            if slope == 0:
+                equation = f"y={y_intercept}"
+            elif y_intercept == 0:
+                equation = f"y={slope}x"
+            else:
+                equation = f"y={slope}x+{y_intercept}"
         else:
-            slope = None
+            slope = 0 # Assign a value that makes sense for your application
             y_intercept = None
             equation = f"x={x1}"
 
@@ -326,12 +383,12 @@ class line_equation(APIView):
         )
 
         line.save()
-        
 
-        
         # Use serializer to serialize the line object or manually create a response dictionary
         serializer = line_equation_Serializer(line)
         return Response(serializer.data)
+
+
 ################### חיתוך של 2 ישירם
 class Meeting_Point_2_functions(APIView):
     def get(self, request):
@@ -428,7 +485,7 @@ class Triangle_hm(APIView):
         return Response(serializer.data)
 ################ שטח משולש קל
 def calculate_area_1(x, y):
-    return abs(x) * abs(y) // 2
+    return abs(x) * abs(y) / 2  # Use float division
 
 def generate_line_1():
     slope = random.randint(-10, 10)
@@ -437,22 +494,53 @@ def generate_line_1():
         slope = random.randint(-10, 10)
         y_intercept = random.randint(-10, 10)
 
-    x_intercept = -y_intercept // slope
+    x_intercept = -y_intercept / slope  # Use float division
     return slope, y_intercept, x_intercept
+
+def format_number(value):
+    value_str = str(value)
+    if '.' in value_str:
+        value_str = value_str.rstrip('0').rstrip('.')
+    return value_str
+
+def ensure_positive(value):
+    return abs(value)
+
+
 
 @api_view(['GET'])
 def Triangle_e(request):
     slope, y_intercept, x_intercept = generate_line_1()
-    area = calculate_area_1(x_intercept, y_intercept)
-    line_equation = f"y = {slope}x + {y_intercept}"
-    line =problems.objects.create(line_equation=line_equation, x_intersection=x_intercept,y_intersection=y_intercept, height=y_intercept, base=x_intercept, area=area)
+    base = ensure_positive(x_intercept)  # Ensure the base is positive
+    height = ensure_positive(y_intercept)  # Ensure the height is positive
+    area = calculate_area_1(base, height)
+
+    line_equation = f"y = {slope}x + {y_intercept if y_intercept >= 0 else '- ' + str(abs(y_intercept))}"
+    line = problems.objects.create(
+        line_equation=line_equation,
+        x_intersection=x_intercept,
+        y_intersection=y_intercept,
+        height=height,
+        base=base,
+        area=area
+    )
 
     serializer = Triangle_e_Serializer(line)
+    response_data = serializer.data
+
+    # Format the values
+    for key in ['y_intersection', 'x_intersection', 'area', 'height', 'base']:
+        response_data[key] = format_number(response_data[key])
+
+    return Response(response_data)
+#################
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_solved_problems(request):
+    user = request.user
+    solved_problems = problems.objects.filter(solved_by=user)
+    serializer = ProblemsSerializer(solved_problems, many=True)
     return Response(serializer.data)
-
-
-
-
 
 
 
@@ -473,6 +561,7 @@ def problem_solver(request, problem_name):
         'test_11':Cutting_points_with_hinges.as_view(),
         'test_12':Triangle_hm.as_view(),
         'test_13':Triangle_e,
+        'test_14':Pythagoras_e.as_view()
 
     
 
@@ -487,3 +576,14 @@ def problem_solver(request, problem_name):
         return view_func(request)
     else:
         return HttpResponse('Problem not found', status=404)
+    
+class RetrieveSolvedExercisesView(generics.ListAPIView):
+    serializer_class = SolvedExerciseSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            # If the user is not authenticated, return an empty queryset
+            return SolvedExercise.objects.none()
+        else:
+            return SolvedExercise.objects.filter(user=user)

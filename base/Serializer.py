@@ -1,6 +1,5 @@
-
 from rest_framework import serializers
-from .models import problems
+from .models import SolvedExercise, problems
 
 class Distributive_property_Serializer(serializers.ModelSerializer):#חוק הפילוג 2 הרמות
     class Meta:
@@ -44,10 +43,15 @@ class Equation_e_Serializer(serializers.ModelSerializer):
         fields = ['id','correct_answer_fl','equation',]
 
 
-class Pythagoras_eh_Serializer(serializers.ModelSerializer):
+class Pythagoras_h_Serializer(serializers.ModelSerializer):
     class Meta:
         model = problems
         fields = ['id','a_fl', 'b_fl','c_fl','option' ,]
+
+class Pythagoras_e_Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = problems
+        fields = ['id', 'a', 'b', 'c_fl']
 
 class line_equation_Serializer(serializers.ModelSerializer):
     class Meta:
@@ -79,6 +83,13 @@ class Meeting_Point_2_functions_Serializer(serializers.ModelSerializer):
         fields = ['id','line1_equation','line2_equation','intersection_point',]
 
 
+class ProblemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = problems
+        fields = '__all__'
 
 
-
+class SolvedExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolvedExercise
+        fields = ('exercise_id', 'timestamp')

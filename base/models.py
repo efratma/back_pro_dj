@@ -14,29 +14,16 @@ from django.conf import settings
 import sympy as sp
 from sympy import symbols, expand
 
-class Equation(models.Model):
-    equa_name = models.CharField(max_length=50,null=True,blank=True)
-    desc_equa = models.CharField(max_length=50,null=True,blank=True)
-    grade = models.DecimalField(max_digits=5,decimal_places=2)
-    level=models.IntegerField()
- 
-    def __str__(self):
-           return (self.equa_name, self.desc_equ)
-
-class my_equa(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    equation = models.CharField(max_length=50,null=True,blank=True)
-    equa_name = models.CharField(max_length=50,null=True,blank=True)
-    is_correct=models.BooleanField (default=False)
-    createdTime=models.DateTimeField(auto_now_add=True)
- 
-    def __str__(self):
-           return f'{self.equa_name}  '
-    
-
+class SolvedExercise(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    exercise_id = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
 #נסיון לאחד הכל במודל אחד:
 class problems(models.Model):
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    solved_by = models.ManyToManyField(User, related_name='solved_problems', blank=True)
+
     # נקודת מפגש ל 2 פונציות 
     line1_equation = models.CharField(max_length=100,null=True)
     line2_equation = models.CharField(max_length=100,null=True)
@@ -61,9 +48,9 @@ class problems(models.Model):
     y_intercept = models.IntegerField(default=0)
     equation = models.CharField(max_length=100, default='')
    #פיתגורס רמה קשה וקלה
-    a_fl = models.FloatField(null=True)
-    b_fl = models.FloatField(null=True)
-    c_fl = models.FloatField(null=True)
+    a_fl =  models.FloatField(null=True, blank=True)
+    b_fl =  models.FloatField(null=True, blank=True)
+    c_fl =  models.FloatField(null=True, blank=True)
     option = models.CharField(max_length=1) 
     # משוואות כיתה ז רמה קלה
     result = models.IntegerField(null=True)
@@ -81,8 +68,8 @@ class problems(models.Model):
     e = models.IntegerField(default=0)
     f = models.IntegerField(default=0)
     g = models.IntegerField(default=0)
-    solution_x = models.FloatField(default=0.0)
-    solution_y = models.FloatField(default=0.0)
+    solution_x = models.DecimalField(max_digits=10, decimal_places=2,null=True)
+    solution_y = models.DecimalField(max_digits=10, decimal_places=2,null=True)
     #משוואות בשני נעלמים רמה קשה
     equation1 = models.CharField(max_length=255)
     equation2 = models.CharField(max_length=255)
