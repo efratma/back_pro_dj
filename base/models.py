@@ -13,17 +13,10 @@ import random
 from django.conf import settings
 import sympy as sp
 from sympy import symbols, expand
-
-class SolvedExercise(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    exercise_id = models.CharField(max_length=255)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
 #נסיון לאחד הכל במודל אחד:
 class problems(models.Model):
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    solved_by = models.ManyToManyField(User, related_name='solved_problems', blank=True)
-
+    is_correct = models.BooleanField(default=False)
     # נקודת מפגש ל 2 פונציות 
     line1_equation = models.CharField(max_length=100,null=True)
     line2_equation = models.CharField(max_length=100,null=True)

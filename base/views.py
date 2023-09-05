@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from sympy import expand, symbols,Eq, linsolve
-from .Serializer import Distributive_property_Serializer, Equation_System_e_Serializer, Equation_System_h_Serializer, Equation_System_m_Serializer, Equation_e_Serializer, Equation_h_Serializer, Equation_m_Serializer, Pythagoras_h_Serializer, SolvedExerciseSerializer, Triangle_hm_Serializer, line_equation_Serializer,Meeting_Point_2_functions_Serializer,Cutting_points_with_hinges_Serializer,Triangle_e_Serializer,Pythagoras_e_Serializer,ProblemsSerializer
-from .models import SolvedExercise, problems
+from .Serializer import Distributive_property_Serializer, Equation_System_e_Serializer, Equation_System_h_Serializer, Equation_System_m_Serializer, Equation_e_Serializer, Equation_h_Serializer, Equation_m_Serializer, Pythagoras_h_Serializer,  Triangle_hm_Serializer, line_equation_Serializer,Meeting_Point_2_functions_Serializer,Cutting_points_with_hinges_Serializer,Triangle_e_Serializer,Pythagoras_e_Serializer,ProblemsSerializer
+from .models import problems
 from rest_framework.views import APIView
 import math
 import sympy as sp
@@ -14,26 +14,31 @@ from random import randint
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
-
-
-
-
-
-# register
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+import json
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_jwt.settings import api_settings
 
 
 @api_view(['POST'])
 def register(request):
+    if User.objects.filter(username=request.data['username']).exists():
+        return Response({"detail": "Username already exists"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if User.objects.filter(email=request.data['email']).exists():
+        return Response({"detail": "Email already in use"}, status=status.HTTP_400_BAD_REQUEST)
+
     user = User.objects.create_user(
-                username=request.data['username'],
-                email=request.data['email'],
-                password=request.data['password']
-            )
+        username=request.data['username'],
+        email=request.data['email'],
+        password=request.data['password']
+    )
     user.is_active = True
     user.is_staff = False
     user.save()
-    return Response("new user born")
-
+    
+    return Response("New user born")
 ###########חוק הפילוג המורחב מוגבר
 x, y = symbols('x y')
 
@@ -68,10 +73,11 @@ def format_solution(expression):
     return str(expression).replace('*', '')
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Law_of_Extended_Division_h(request):
     if request.method == 'GET':
         problem_str, solution = generate_problem()
-        problem_instance = problems(problem_str=problem_str, solution=format_solution(solution))
+        problem_instance = problems(problem_str=problem_str, solution=format_solution(solution),user=request.user,)
         problem_instance.save()
         serializer = Distributive_property_Serializer(problem_instance)
         return Response(serializer.data)
@@ -103,14 +109,16 @@ def format_solution(expression):
     return str(expression).replace('*', '')
 
 class Law_of_Extended_Division_e(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         problem, solution = generate_problem_1()
         solution_str = format_solution(solution)
-        problem_obj = problems.objects.create(problem_str=str(problem), solution=solution_str)
+        problem_obj = problems.objects.create(problem_str=str(problem), solution=solution_str,user=request.user,)
         serializer = Distributive_property_Serializer(problem_obj)
         return Response(serializer.data)
 ######################מערכת 2 משוואת רמה קשה
 class Equation_System_h(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         # Define variables
         x, y = symbols('x y')
@@ -160,12 +168,13 @@ class Equation_System_h(APIView):
 
             equation = problems.objects.create(
             solution_x=solution_x, solution_y=solution_y,
-            equation1=eqs_str[selected_indices[0]], equation2=eqs_str[selected_indices[1]]
+            equation1=eqs_str[selected_indices[0]], equation2=eqs_str[selected_indices[1]],user=request.user,
           )
         serializer = Equation_System_h_Serializer(equation)
         return Response(serializer.data)
 ##########מערכת משוואת בינוי
 class Equation_System_m(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         x, y = symbols('x y')
         a, b, c, d, e, f, g, h, i = [randint(1, 10) - 5 for _ in range(9)]
@@ -188,7 +197,7 @@ class Equation_System_m(APIView):
 
             equation = problems.objects.create(
                 solution_x=solution_x, solution_y=solution_y,
-                equation1=equation1_str, equation2=equation2_str
+                equation1=equation1_str, equation2=equation2_str,user=request.user,
             )
 
             serializer = Equation_System_m_Serializer(equation)
@@ -197,6 +206,7 @@ class Equation_System_m(APIView):
             return Response(response_data)
     ################################## מערכת משוואת קל
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Equation_System_e(request):
     x, y = sp.symbols('x y')
     a, b, e = [random.randint(1, 10)-5 for _ in range(3)]
@@ -226,7 +236,7 @@ def Equation_System_e(request):
 
     equation_instance = problems(
         # Assuming you might have parameters a to f for the problems model. If not, comment/remove this line.
-        # a=a, b=b, c=c, d=d, e=e, f=f,
+        user=request.user,
         solution_x=solution_x,
         solution_y=solution_y,
         equation1=equation1_str,  # Store in database
@@ -267,9 +277,10 @@ def generate_equation():
     return equation_text, x
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Equation_h(request):
     equation_text, correct_answer = generate_equation()
-    equation = problems.objects.create(equation_text=equation_text, correct_answer=correct_answer)
+    equation = problems.objects.create(equation_text=equation_text, correct_answer=correct_answer,user=request.user,)
     serializer = Equation_h_Serializer(equation)
     return Response(serializer.data)
 
@@ -286,9 +297,10 @@ def generate_equation_1():
     return equation, x
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Equation_m(request):
     equation_str, correct_answer = generate_equation_1()
-    equation = problems(equation=equation_str, correct_answer_fl=correct_answer)
+    equation = problems(equation=equation_str, correct_answer_fl=correct_answer,user=request.user,)
     equation.save()
     serializer =Equation_m_Serializer(equation)
     return Response(serializer.data)
@@ -303,9 +315,10 @@ def generate_equation_2():
     return a, b, result, x, equation
 
 class Equation_e(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         a, b, result, x, equation_str = generate_equation_2()
-        equation = problems.objects.create( correct_answer_fl=x, equation=equation_str)
+        equation = problems.objects.create( correct_answer_fl=x, equation=equation_str,user=request.user,)
         serializer = Equation_e_Serializer(equation)
         return Response(serializer.data)
 ########################פיתגורס
@@ -328,9 +341,10 @@ def generate_question():
         return a, b, c, "a"
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Pythagoras_eh(request):
     a, b, c, option = generate_question()
-    question = problems.objects.create(a_fl=a, b_fl=b, c_fl=c, option=option)
+    question = problems.objects.create(a_fl=a, b_fl=b, c_fl=c, option=option,user=request.user,)
     serializer = Pythagoras_h_Serializer(question)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -342,15 +356,17 @@ def generate_question1():
     return a, b, c
 
 class Pythagoras_e(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         a, b, c = generate_question1()
-        question = problems.objects.create(a=a, b=b, c_fl=c)  # Store c in the database
+        question = problems.objects.create(a=a, b=b, c_fl=c,user=request.user,)  # Store c in the database
         serializer = Pythagoras_e_Serializer(question)
         return Response(serializer.data)
 
 
 ################### מציאת קו ישר כל הרמות
 class line_equation(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         x1 = random.randint(-10, 10)
         y1 = random.randint(-10, 10)
@@ -373,6 +389,7 @@ class line_equation(APIView):
             equation = f"x={x1}"
 
         line = problems(
+            user=request.user,
             point1_x=x1,
             point1_y=y1,
             point2_x=x2,
@@ -391,6 +408,8 @@ class line_equation(APIView):
 
 ################### חיתוך של 2 ישירם
 class Meeting_Point_2_functions(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         x, y = random.randint(-10, 10), random.randint(-10, 10)
         m1, m2 = random.randint(-5, 5), random.randint(-5, 5)
@@ -404,15 +423,27 @@ class Meeting_Point_2_functions(APIView):
         intersection_point = f"({x}, {y})"
 
         line = problems(
+            user=request.user,
             line1_equation=line1_equation,
             line2_equation=line2_equation,
             intersection_point=intersection_point
         )
-
-        serializer = Meeting_Point_2_functions_Serializer(line)
+        
         line.save()
 
+        serializer = Meeting_Point_2_functions_Serializer(line)
         return Response(serializer.data)
+
+class ListUserExercises(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Meeting_Point_2_functions_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 ##################### חיתוך עם הצירים
 def generate_linear_equation():
     m = random.randint(-10, 10)  # random slope
@@ -428,12 +459,13 @@ def solve_linear_equation(m,c):
     return y_when_x_is_zero, x_when_y_is_zero
 
 class Cutting_points_with_hinges(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         equation_string, m, c = generate_linear_equation()
         correct_y, correct_x = solve_linear_equation(m, c)
 
-        equation = problems.objects.create(equation=equation_string, y_when_x_zero=correct_y, x_when_y_zero=correct_x)
+        equation = problems.objects.create(equation=equation_string, y_when_x_zero=correct_y, x_when_y_zero=correct_x,user=request.user,)
         serializer = Cutting_points_with_hinges_Serializer(equation)
 
         return Response(serializer.data)
@@ -455,6 +487,7 @@ def find_intersection(line1, line2):
     return x_intersection, y_intersection
 
 class Triangle_hm(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         line1 = generate_line()
         line2 = generate_line()
@@ -470,6 +503,7 @@ class Triangle_hm(APIView):
         line2_equation = f"y = {line2[0]}x +{line2[1]}"
 
         triangle = problems(
+            user=request.user,
             area=area,
             height=height,
             base=base,
@@ -509,6 +543,7 @@ def ensure_positive(value):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def Triangle_e(request):
     slope, y_intercept, x_intercept = generate_line_1()
     base = ensure_positive(x_intercept)  # Ensure the base is positive
@@ -517,6 +552,7 @@ def Triangle_e(request):
 
     line_equation = f"y = {slope}x + {y_intercept if y_intercept >= 0 else '- ' + str(abs(y_intercept))}"
     line = problems.objects.create(
+        user=request.user,
         line_equation=line_equation,
         x_intersection=x_intercept,
         y_intersection=y_intercept,
@@ -561,7 +597,8 @@ def problem_solver(request, problem_name):
         'test_11':Cutting_points_with_hinges.as_view(),
         'test_12':Triangle_hm.as_view(),
         'test_13':Triangle_e,
-        'test_14':Pythagoras_e.as_view()
+        'test_14':Pythagoras_e.as_view(),
+ 
 
     
 
@@ -577,13 +614,4 @@ def problem_solver(request, problem_name):
     else:
         return HttpResponse('Problem not found', status=404)
     
-class RetrieveSolvedExercisesView(generics.ListAPIView):
-    serializer_class = SolvedExerciseSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            # If the user is not authenticated, return an empty queryset
-            return SolvedExercise.objects.none()
-        else:
-            return SolvedExercise.objects.filter(user=user)

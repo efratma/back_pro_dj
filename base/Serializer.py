@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SolvedExercise, problems
+from .models import  problems
 
 class Distributive_property_Serializer(serializers.ModelSerializer):#חוק הפילוג 2 הרמות
     class Meta:
@@ -88,8 +88,3 @@ class ProblemsSerializer(serializers.ModelSerializer):
         model = problems
         fields = '__all__'
 
-
-class SolvedExerciseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SolvedExercise
-        fields = ('exercise_id', 'timestamp')
