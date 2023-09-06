@@ -81,10 +81,17 @@ def Law_of_Extended_Division_h(request):
         problem_instance.save()
         serializer = Distributive_property_Serializer(problem_instance)
         return Response(serializer.data)
+    
+class ListUserExercises_divisionh(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Distributive_property_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ########## חוק הפילוג המורחב רמה קלה
-
-
-
 def generate_problem_1():
     a = random.randint(-10, 10)
     b = random.randint(-10, 10)
@@ -116,36 +123,39 @@ class Law_of_Extended_Division_e(APIView):
         problem_obj = problems.objects.create(problem_str=str(problem), solution=solution_str,user=request.user,)
         serializer = Distributive_property_Serializer(problem_obj)
         return Response(serializer.data)
+
+class ListUserExercises_divisione(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Distributive_property_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ######################מערכת 2 משוואת רמה קשה
 class Equation_System_h(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         # Define variables
         x, y = symbols('x y')
-
         # Generate coefficients for three types of equations
         a, b, d, e, f, h, i, k, l = [random.randint(-5, 5) for _ in range(9)]
         c, g, j = [random.randint(1, 5) for _ in range(3)] # Ensure non-zero for divisors
-
         # Define equations as strings
         eq1_str = f"({a}x{'+' if b >= 0 else ''}{b})/{c}{'+' if d >= 0 else '-'}{abs(d)} = ({e}y{'+' if f >= 0 else ''}{f})/{g}"
         eq2_str = f"({a}x{'+' if b >= 0 else ''}{b})/{c} = ({e}y{'+' if f >= 0 else ''}{f})/{g}"
         eq3_str = f"({h}x{'+' if i >= 0 else ''}{i})/{j}{'+' if k >= 0 else '-'}{abs(k)}y{'+' if l >= 0 else ''}{l}/{g} = {d}"
-
         # Convert to sympy expressions
         eq1 = Eq((a * x + b) / c + d, (e * y + f) / g)
         eq2 = Eq((a * x + b) / c, (e * y + f) / g)
         eq3 = Eq((h * x + i) / j + k * y + l / g, d)
-
         # Randomly select two equations from the list
         eqs_str = [eq1_str, eq2_str, eq3_str]
         eqs = [eq1, eq2, eq3]
         selected_indices = random.sample(range(3), 2)
-
         # Solve the system of equations
         solution = linsolve([eqs[i] for i in selected_indices], (x, y))
-
-
         # Check for no solution or infinite solutions
         if len(solution) == 0:
             response_data = {
@@ -172,6 +182,16 @@ class Equation_System_h(APIView):
           )
         serializer = Equation_System_h_Serializer(equation)
         return Response(serializer.data)
+
+class ListUserExercises_systemh(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_System_h_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ##########מערכת משוואת בינוי
 class Equation_System_m(APIView):
     permission_classes = [IsAuthenticated]
@@ -204,6 +224,16 @@ class Equation_System_m(APIView):
 
             response_data = serializer.data
             return Response(response_data)
+
+class ListUserExercises_systemM(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_System_m_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     ################################## מערכת משוואת קל
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -247,11 +277,15 @@ def Equation_System_e(request):
     serializer = Equation_System_e_Serializer(equation_instance)
     return Response(serializer.data)
 
+class ListUserExercises_systeme(APIView):
+    permission_classes = [IsAuthenticated]
 
-
-
-
-
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_System_e_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ####################משוואה ז רמה קשה
 def generate_equation():
     a = random.randint(1,10)
@@ -284,6 +318,15 @@ def Equation_h(request):
     serializer = Equation_h_Serializer(equation)
     return Response(serializer.data)
 
+class ListUserExercises_Equationh(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_h_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ######################### משוואה ז בינוני
 def generate_equation_1():
     a = random.randint(1,10)
@@ -305,6 +348,15 @@ def Equation_m(request):
     serializer =Equation_m_Serializer(equation)
     return Response(serializer.data)
 
+class ListUserExercises_Equationm(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_m_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ################## משוואה כיתה ז קל
 def generate_equation_2():
     a = random.randint(1, 10)
@@ -321,6 +373,16 @@ class Equation_e(APIView):
         equation = problems.objects.create( correct_answer_fl=x, equation=equation_str,user=request.user,)
         serializer = Equation_e_Serializer(equation)
         return Response(serializer.data)
+    
+class ListUserExercises_Equatione(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Equation_e_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ########################פיתגורס
 def generate_question():
     option = random.randint(0, 2)  
@@ -348,6 +410,16 @@ def Pythagoras_eh(request):
     serializer = Pythagoras_h_Serializer(question)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+class ListUserExercises_Pythagorash(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Pythagoras_h_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 ######## פיתגורס קל
 def generate_question1():
     a = random.randint(1, 20)
@@ -363,7 +435,15 @@ class Pythagoras_e(APIView):
         serializer = Pythagoras_e_Serializer(question)
         return Response(serializer.data)
 
+class ListUserExercises_Pythagorase(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Pythagoras_e_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ################### מציאת קו ישר כל הרמות
 class line_equation(APIView):
     permission_classes = [IsAuthenticated]
@@ -405,7 +485,15 @@ class line_equation(APIView):
         serializer = line_equation_Serializer(line)
         return Response(serializer.data)
 
+class ListUserExercises_line(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = line_equation_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ################### חיתוך של 2 ישירם
 class Meeting_Point_2_functions(APIView):
     permission_classes = [IsAuthenticated]
@@ -434,7 +522,7 @@ class Meeting_Point_2_functions(APIView):
         serializer = Meeting_Point_2_functions_Serializer(line)
         return Response(serializer.data)
 
-class ListUserExercises(APIView):
+class ListUserExercises_meeting_point(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -469,54 +557,16 @@ class Cutting_points_with_hinges(APIView):
         serializer = Cutting_points_with_hinges_Serializer(equation)
 
         return Response(serializer.data)
-#############################שטח משולש בינוני וקשה
-
-def calculate_area(base, height):
-    return round(1/2 * abs(base) * abs(height), 2)
-
-def generate_line():
-    slope = random.randint(-10, 10)
-    y_intercept = random.randint(-10, 10)
-    return slope, y_intercept
-
-def find_intersection(line1, line2):
-    slope1, y_intercept1 = line1
-    slope2, y_intercept2 = line2
-    x_intersection = round((y_intercept2 - y_intercept1) / (slope1 - slope2), 2)
-    y_intersection = round(slope1 * x_intersection + y_intercept1, 2)
-    return x_intersection, y_intersection
-
-class Triangle_hm(APIView):
+    
+class ListUserExercises_Cutting_points(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        line1 = generate_line()
-        line2 = generate_line()
-
-        x_intersection, y_intersection = find_intersection(line1, line2)
-
-        base = round(abs(x_intersection), 2)
-        height = round(abs(y_intersection), 2)
-
-        area = calculate_area(base, height)
-
-        line1_equation = f"y = {line1[0]}x +{line1[1]}"
-        line2_equation = f"y = {line2[0]}x +{line2[1]}"
-
-        triangle = problems(
-            user=request.user,
-            area=area,
-            height=height,
-            base=base,
-            line1_equation=line1_equation,
-            line2_equation=line2_equation,
-            y_intersection=y_intersection,
-            x_intersection=x_intersection
-        )
-        triangle.save()
-
-        serializer = Triangle_hm_Serializer(triangle)
-
-        return Response(serializer.data)
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Cutting_points_with_hinges_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ################ שטח משולש קל
 def calculate_area_1(x, y):
     return abs(x) * abs(y) / 2  # Use float division
@@ -569,14 +619,18 @@ def Triangle_e(request):
         response_data[key] = format_number(response_data[key])
 
     return Response(response_data)
+
+class ListUserExercises_Triangle(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Retrieve all exercises associated with the logged-in user
+        user_exercises = problems.objects.filter(user=request.user)
+        # Serialize the queryset
+        serializer = Triangle_e_Serializer(user_exercises, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 #################
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def user_solved_problems(request):
-    user = request.user
-    solved_problems = problems.objects.filter(solved_by=user)
-    serializer = ProblemsSerializer(solved_problems, many=True)
-    return Response(serializer.data)
+
 
 
 
@@ -595,15 +649,22 @@ def problem_solver(request, problem_name):
         'test_9': line_equation.as_view(),
         'test_10':Meeting_Point_2_functions.as_view(),
         'test_11':Cutting_points_with_hinges.as_view(),
-        'test_12':Triangle_hm.as_view(),
         'test_13':Triangle_e,
         'test_14':Pythagoras_e.as_view(),
- 
-
-    
-
-
-
+        'test_15':ListUserExercises_meeting_point.as_view(),
+        'test_16':ListUserExercises_divisionh.as_view(),
+        'test_17':ListUserExercises_divisione.as_view(),
+        'test_18':ListUserExercises_systemh.as_view(),
+        'test_19':ListUserExercises_systemM.as_view(),
+        'test_20':ListUserExercises_systeme.as_view(),
+        'test_21':ListUserExercises_Equationh.as_view(),
+        'test_22':ListUserExercises_Equationm.as_view(),
+        'test_23':ListUserExercises_Equatione.as_view(),
+        'test_24':ListUserExercises_Pythagorash.as_view(),
+        'test_25':ListUserExercises_Pythagorase.as_view(),
+        'test_26':ListUserExercises_line.as_view(),
+        'test_27':ListUserExercises_Cutting_points.as_view(),
+        'test_28':ListUserExercises_Triangle.as_view(),
 
     }
 
