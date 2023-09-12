@@ -13,10 +13,34 @@ import random
 from django.conf import settings
 import sympy as sp
 from sympy import symbols, expand
+from django.contrib.auth.models import AbstractUser
+from rest_framework.authtoken.models import Token
+
+
+
 #נסיון לאחד הכל במודל אחד:
+class CustomUser(AbstractUser):
+    # Add your custom fields here
+
+    password_reset_token_expiration = models.DateTimeField(null=True, blank=True)
+    # Add related_name to groups and user_permissions
+    groups = models.ManyToManyField(
+        "auth.Group", related_name="customuser_set", blank=True, verbose_name="groups"
+    )
+    user_permissions = models.ManyToManyField(
+        "auth.Permission",
+        related_name="customuser_set",
+        blank=True,
+        verbose_name="user permissions",
+    )
+
 class problems(models.Model):
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
     is_correct = models.BooleanField(default=False)
+    password_reset_token = models.CharField(max_length=32, null=True, blank=True)
+    password_reset_token_expiration = models.DateTimeField(null=True, blank=True)
+
     # נקודת מפגש ל 2 פונציות 
     line1_equation = models.CharField(max_length=100,null=True)
     line2_equation = models.CharField(max_length=100,null=True)

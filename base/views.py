@@ -17,8 +17,25 @@ from rest_framework import generics
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 import json
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework_jwt.settings import api_settings
+from django.core.mail import send_mail
+from datetime import datetime, timedelta
+from .utils import generate_unique_token
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth import get_user_model
+from django.utils import timezone 
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from django.shortcuts import reverse
+from rest_framework.response import Response
+from datetime import timedelta
+from django.contrib.auth import login 
+from django.utils.crypto import get_random_string
 
 
 @api_view(['POST'])
@@ -39,6 +56,77 @@ def register(request):
     user.save()
     
     return Response("New user born")
+#####################
+
+User = get_user_model()  # Get the custom user model
+
+@csrf_exempt
+@api_view(['POST'])
+def request_password_reset(request):
+    user_email = request.data.get('email')
+    username = request.data.get('username')  # Add this line to get the username
+
+    try:
+        user = User.objects.get(email=user_email, username=username)
+    except User.DoesNotExist:
+        return Response({"error": "No user associated with this email and username."}, status=400)
+
+    # Generate a token and set its expiration
+    token = default_token_generator.make_token(user)
+    user.password_reset_token = token
+    user.password_reset_token_expiration = timezone.now() + timedelta(hours=24)  # Token valid for 24 hours
+    user.save()
+
+    # Create reset URL with user's identifier (e.g., username or email)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    reset_url = f"http://localhost:4200/reset-password/{uid}/{token}"
+
+    # Send email
+    send_mail(
+        'Password Reset Request',
+        f'Click here to reset your password: {reset_url}',
+        'from_email@example.com',
+        [user_email],
+        fail_silently=False,
+    )
+
+    return Response({"message": "Email sent!"})
+
+
+@csrf_exempt
+@api_view(['POST'])
+def reset_password(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (User.DoesNotExist, ValueError, OverflowError, TypeError):
+        return Response({"error": "Invalid user."}, status=400)
+
+    if not default_token_generator.check_token(user, token):
+        return Response({"error": "Invalid token."}, status=400)
+
+    if timezone.now() > user.password_reset_token_expiration:
+        return Response({"error": "Token has expired"}, status=400)
+
+    new_password = request.data.get('new_password')
+
+    # Change password and clear the reset token
+    user.set_password(new_password)
+    user.password_reset_token = None
+    user.password_reset_token_expiration = None
+
+    # Set the user's backend attribute
+    user.backend = 'django.contrib.auth.backends.ModelBackend'  # Add this line
+
+    user.save()
+
+    # Log in the user
+    login(request, user)  # Use the login function from django.contrib.auth
+
+    return Response({"message": "Password reset successful!"})
+
+
+
 ###########חוק הפילוג המורחב מוגבר
 x, y = symbols('x y')
 
