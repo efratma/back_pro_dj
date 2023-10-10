@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from sympy import expand, symbols,Eq, linsolve
+import sympy
 from .Serializer import Distributive_property_Serializer, Equation_System_e_Serializer, Equation_System_h_Serializer, Equation_System_m_Serializer, Equation_e_Serializer, Equation_h_Serializer, Equation_m_Serializer, Pythagoras_h_Serializer,  Triangle_hm_Serializer, line_equation_Serializer,Meeting_Point_2_functions_Serializer,Cutting_points_with_hinges_Serializer,Triangle_e_Serializer,Pythagoras_e_Serializer,ProblemsSerializer
 from .models import problems
 from rest_framework.views import APIView
@@ -36,7 +37,8 @@ from rest_framework.response import Response
 from datetime import timedelta
 from django.contrib.auth import login 
 from django.utils.crypto import get_random_string
-
+from sympy import printing
+import re
 
 @api_view(['POST'])
 def register(request):
@@ -83,8 +85,8 @@ def request_password_reset(request):
 
     # Send email
     send_mail(
-        'Password Reset Request',
-        f'Click here to reset your password: {reset_url}',
+        'שחזור סיסמה לאתר mathtictac',
+        f'לחץ על הקישור על מנת לשחזר את הסיסמה שלך: {reset_url}',
         'from_email@example.com',
         [user_email],
         fail_silently=False,
@@ -323,8 +325,28 @@ class ListUserExercises_systemM(APIView):
         serializer = Equation_System_m_Serializer(user_exercises, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     ################################## מערכת משוואת קל
+def truncate_solution(value):
+    if not isinstance(value, (float, int)):
+        return value
+
+    # Convert to string to get the decimal portion.
+    str_value = "{:.2f}".format(value)
+
+    # Remove trailing zeroes
+    while str_value[-1] == '0':
+        str_value = str_value[:-1]
+    
+    if str_value[-1] == '.':
+        str_value = str_value[:-1]
+    
+    # Convert back to float or int
+    if '.' in str_value:
+        return float(str_value)
+    return int(str_value)
+
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def Equation_System_e(request):
     x, y = sp.symbols('x y')
     a, b, e = [random.randint(1, 10)-5 for _ in range(3)]
@@ -340,12 +362,12 @@ def Equation_System_e(request):
 
     # Check if they are numbers and convert, else store as string
     if x_sol.is_number:
-        solution_x = float(x_sol)
+        solution_x = truncate_solution(float(x_sol))
     else:
         solution_x = str(x_sol)
 
     if y_sol.is_number:
-        solution_y = float(y_sol)
+        solution_y = truncate_solution(float(y_sol))
     else:
         solution_y = str(y_sol)
 
@@ -353,12 +375,11 @@ def Equation_System_e(request):
     equation2_str = f"{c}x + {d}y = {f}"  # Equation string
 
     equation_instance = problems(
-        # Assuming you might have parameters a to f for the problems model. If not, comment/remove this line.
-        user=request.user,
+        #user=request.user,
         solution_x=solution_x,
         solution_y=solution_y,
-        equation1=equation1_str,  # Store in database
-        equation2=equation2_str   # Store in database
+        equation1=equation1_str,
+        equation2=equation2_str
     )
     
     equation_instance.save()
@@ -374,6 +395,7 @@ class ListUserExercises_systeme(APIView):
         # Serialize the queryset
         serializer = Equation_System_e_Serializer(user_exercises, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 ####################משוואה ז רמה קשה
 def generate_equation():
     a = random.randint(1,10)
