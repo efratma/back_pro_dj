@@ -225,7 +225,7 @@ class ListUserExercises_divisione(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 ######################מערכת 2 משוואת רמה קשה
 class Equation_System_h(APIView):
-    permission_classes = [IsAuthenticated]
+    ###permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
         # Define variables
         x, y = symbols('x y')
@@ -268,7 +268,7 @@ class Equation_System_h(APIView):
 
             equation = problems.objects.create(
             solution_x=solution_x, solution_y=solution_y,
-            equation1=eqs_str[selected_indices[0]], equation2=eqs_str[selected_indices[1]],user=request.user,
+            equation1=eqs_str[selected_indices[0]], equation2=eqs_str[selected_indices[1]],
           )
         serializer = Equation_System_h_Serializer(equation)
         return Response(serializer.data)
@@ -495,21 +495,24 @@ class ListUserExercises_Equatione(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 ########################פיתגורס
 def generate_question():
-    option = random.randint(0, 2)  
+    def truncate_two_decimal(val):
+        return int(val * 100) / 100.0
+    
+    option = random.randint(0, 2)
     if option == 0:
         a = random.randint(1, 20)
         b = random.randint(1, 20)
-        c = round((a**2 + b**2)**0.5, 2)
+        c = truncate_two_decimal((a**2 + b**2)**0.5)
         return a, b, c, "c"
     elif option == 1:
         a = random.randint(1, 20)
         c = random.randint(a + 1, 30)
-        b = round((c**2 - a**2)**0.5, 2)
+        b = truncate_two_decimal((c**2 - a**2)**0.5)
         return a, b, c, "b"
     else:
         b = random.randint(1, 20)
         c = random.randint(b + 1, 30)
-        a = round((c**2 - b**2)**0.5, 2)
+        a = truncate_two_decimal((c**2 - b**2)**0.5)
         return a, b, c, "a"
 
 @api_view(['GET'])
@@ -534,14 +537,15 @@ class ListUserExercises_Pythagorash(APIView):
 def generate_question1():
     a = random.randint(1, 20)
     b = random.randint(1, 20)
-    c = round((a**2 + b**2)**0.5, 2)
+    c = a**2 + b**2
+    c = int(c**0.5 * 100) / 100.0  # This truncates the value to 2 decimal places
     return a, b, c
 
 class Pythagoras_e(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     def get(self, request):
         a, b, c = generate_question1()
-        question = problems.objects.create(a=a, b=b, c_fl=c,user=request.user,)  # Store c in the database
+        question = problems.objects.create(a=a, b=b, c_fl=c,)#user=request.user,)  # Store c in the database
         serializer = Pythagoras_e_Serializer(question)
         return Response(serializer.data)
 
