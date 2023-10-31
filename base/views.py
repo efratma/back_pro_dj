@@ -438,7 +438,15 @@ class ListUserExercises_Equationh(APIView):
         serializer = Equation_h_Serializer(user_exercises, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 ######################### משוואה ז בינוני
+def truncate(number, decimals=0):
+    """
+    Truncates a number to 'decimals' decimal places without rounding
+    """
+    multiplier = 10 ** decimals
+    return int(number * multiplier) / multiplier
+
 def generate_equation_1():
+    import random
     a = random.randint(1,10)
     c = random.randint(1,10)
     while a == c:
@@ -446,8 +454,10 @@ def generate_equation_1():
     b = random.randint(1,10)
     d = random.randint(1,10)
     x = (d - b) / (a - c)
+    truncated_x = truncate(x, 2)  # truncating x to 2 decimal places
     equation = f"{a}x + {b} = {c}x + {d}"
-    return equation, x
+    return equation, truncated_x
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
