@@ -42,13 +42,16 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
-
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
-
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 
@@ -108,7 +111,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
-
+    'allauth.account.middleware.AccountMiddleware',
 
 
 ]
@@ -208,3 +211,4 @@ EMAIL_HOST_USER = 'authefrat@gmail.com'
 EMAIL_HOST_PASSWORD = 'smhmkbxdberzlrxf'
 EMAIL_FROM = 'authefrat@gmail.com'
 AUTH_USER_MODEL = 'base.CustomUser'
+
