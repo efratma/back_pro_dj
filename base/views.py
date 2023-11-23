@@ -81,7 +81,7 @@ def request_password_reset(request):
 
     # Create reset URL with user's identifier (e.g., username or email)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    reset_url = f"http://localhost:4200/reset-password/{uid}/{token}"
+    reset_url = f"https://mathtictac.netlify.app/reset-password/{uid}/{token}"
 
     # Send email
     send_mail(
